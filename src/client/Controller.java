@@ -14,6 +14,8 @@ public class Controller {
 
     private GraphicsContext gc = null;
     private ServerConnection serverConnection = null;
+    private String sign = null;
+
 
     @FXML
     public void initialize() {
@@ -57,6 +59,16 @@ public class Controller {
     public void btnConnectClick(ActionEvent actionEvent) {
         try{
             serverConnection = new ServerConnection();
+            sign = serverConnection.ReceiveResponseFromServer();
+
+            if(sign.equals("X")==true){
+                ShowDialog("Вы играете за X - ожидаем подключение другого игрока");
+            }
+
+            if(sign.equals("O")==true){
+                ShowDialog("Вы играете за O");
+            }
+
         }catch (Exception e){
             ShowDialog(e.getMessage());
         }
