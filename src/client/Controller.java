@@ -5,18 +5,24 @@ import javafx.fxml.FXML;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
 
 public class Controller {
 
     @FXML
     Canvas canvasField;
 
-    GraphicsContext gc;
+    private GraphicsContext gc = null;
+    private ServerConnection serverConnection = null;
 
     @FXML
     public void initialize() {
         gc = canvasField.getGraphicsContext2D();
         DrawGrid();
+    }
+
+    private void ShowDialog(String message) {
+        new Alert(Alert.AlertType.CONFIRMATION,message).showAndWait();
     }
 
     private void DrawGrid() {
@@ -46,11 +52,13 @@ public class Controller {
         gc.moveTo(dx*2, 0);
         gc.lineTo(dx*2, h);
         gc.stroke();
-
-
     }
 
     public void btnConnectClick(ActionEvent actionEvent) {
-
+        try{
+            serverConnection = new ServerConnection();
+        }catch (Exception e){
+            ShowDialog(e.getMessage());
+        }
     }
 }
