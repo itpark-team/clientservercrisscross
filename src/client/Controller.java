@@ -15,6 +15,7 @@ public class Controller {
     private GraphicsContext gc = null;
     private ServerConnection serverConnection = null;
     private String sign = null;
+    private String field = null;
 
 
     @FXML
@@ -68,6 +69,10 @@ public class Controller {
             if(sign.equals("O")==true){
                 ShowDialog("Вы играете за O");
             }
+
+            field = serverConnection.ReceiveResponseFromServer();
+
+            ShowDialog(field);
 
         }catch (Exception e){
             ShowDialog(e.getMessage());
