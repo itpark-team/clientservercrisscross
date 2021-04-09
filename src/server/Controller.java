@@ -24,6 +24,8 @@ public class Controller {
                 field[i][j] = EMPTY;
             }
         }
+
+        //field[0][0]=CROSS;
     }
 
     public String GetFieldInString() {

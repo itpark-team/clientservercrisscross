@@ -7,8 +7,8 @@
       fx:controller="client.Controller"
       xmlns:fx="http://javafx.com/fxml">
     <children>
-        <Button layoutX="10.0" layoutY="10.0" onAction="#btnConnectClick" text="Приссоединиться к серверу" />
+        <Button layoutX="10.0" layoutY="10.0" onAction="#btnConnectClick" text="Приссоединиться к серверу" fx:id="btnConnect"/>
 
-        <Canvas layoutX="10.0" layoutY="50.0" fx:id="canvasField" width="300.0" height="300.0"/>
+        <Canvas layoutX="10.0" layoutY="50.0" fx:id="canvasField" width="300.0" height="300.0" onMouseClicked="#canvasFieldClicked"/>
     </children>
 </Pane>

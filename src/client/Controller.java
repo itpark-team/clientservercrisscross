@@ -6,12 +6,17 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.text.Font;
 
 public class Controller {
 
     @FXML
     Canvas canvasField;
+
+    @FXML
+    Button btnConnect;
 
     private GraphicsContext gc = null;
     private ServerConnection serverConnection = null;
@@ -21,6 +26,11 @@ public class Controller {
     private double dy, dx, w, h;
     private final char CRISS = 'O';
     private final char CROSS = 'X';
+
+    private final String WIN_CROSS = "WinCross";
+    private final String WIN_CRISS = "WinCriss";
+    private final String DRAW = "Draw";
+    private final String CONTINUE_GAME = "Continue";
 
     @FXML
     public void initialize() {
@@ -76,17 +86,17 @@ public class Controller {
             }
         }
 
-        gc.setFont(new Font("Arial",dy/2));
+        gc.setFont(new Font("Arial", dy / 2));
 
         for (int i = 0; i < fieldSize; i++) {
             for (int j = 0; j < fieldSize; j++) {
                 if (field[i][j] == CROSS) {
                     ShowDialog("CROSS");
-                    gc.fillText(Character.toString(CROSS),j*dx+dx/3,i*dy+2*dy/3);
+                    gc.fillText(Character.toString(CROSS), j * dx + dx / 3, i * dy + 2 * dy / 3);
                 }
                 if (field[i][j] == CRISS) {
                     ShowDialog("CRISS");
-                    gc.fillText(Character.toString(CRISS),j*dx+dx/3,i*dy+2*dy/3);
+                    gc.fillText(Character.toString(CRISS), j * dx + dx / 3, i * dy + 2 * dy / 3);
                 }
             }
         }
@@ -109,6 +119,36 @@ public class Controller {
 
             DrawField();
 
+            btnConnect.setDisable(true);
+
+        } catch (Exception e) {
+            ShowDialog(e.getMessage());
+        }
+    }
+
+    public void canvasFieldClicked(MouseEvent mouseEvent) {
+
+        try {
+            int j = (int) ((mouseEvent.getSceneX() - canvasField.getLayoutX()) / dx);
+            int i = (int) ((mouseEvent.getSceneY() - canvasField.getLayoutY()) / dy);
+
+            serverConnection.SendRequestToServer(i + "|" + j);
+
+            String setSignResult = serverConnection.ReceiveResponseFromServer();
+
+            if(setSignResult.equals("ok")==true){
+                field = serverConnection.ReceiveResponseFromServer();
+                DrawField();
+
+                String gameResult = serverConnection.ReceiveResponseFromServer();
+
+                if(gameResult.equals(CONTINUE_GAME)==false){
+                    ShowDialog(gameResult);
+                }
+            }
+            else if(setSignResult.equals("error")==true){
+                ShowDialog("Неверный ход походите ещё");
+            }
         } catch (Exception e) {
             ShowDialog(e.getMessage());
         }

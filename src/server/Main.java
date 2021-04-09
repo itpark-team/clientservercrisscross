@@ -83,7 +83,7 @@ public class Main {
                     //1|2->[1,2]->1 2
                     String[] params = requestPlayer1.split("|");
                     i = Integer.parseInt(params[0]);
-                    j = Integer.parseInt(params[1]);
+                    j = Integer.parseInt(params[2]);
 
                     setSignResult = controller.SetSign(i, j, controller.CROSS);
 
@@ -112,7 +112,7 @@ public class Main {
                     //1|2->[1,2]->1 2
                     String[] params = requestPlayer2.split("|");
                     i = Integer.parseInt(params[0]);
-                    j = Integer.parseInt(params[1]);
+                    j = Integer.parseInt(params[2]);
 
                     setSignResult = controller.SetSign(i, j, controller.CRISS);
 
