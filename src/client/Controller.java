@@ -42,9 +42,8 @@ public class Controller {
         h = canvasField.getHeight();
 
         DrawGrid();
-
-
     }
+
 
     private void ShowDialog(String message) {
         new Alert(Alert.AlertType.CONFIRMATION, message).showAndWait();
@@ -91,11 +90,9 @@ public class Controller {
         for (int i = 0; i < fieldSize; i++) {
             for (int j = 0; j < fieldSize; j++) {
                 if (field[i][j] == CROSS) {
-                    ShowDialog("CROSS");
                     gc.fillText(Character.toString(CROSS), j * dx + dx / 3, i * dy + 2 * dy / 3);
                 }
                 if (field[i][j] == CRISS) {
-                    ShowDialog("CRISS");
                     gc.fillText(Character.toString(CRISS), j * dx + dx / 3, i * dy + 2 * dy / 3);
                 }
             }
@@ -144,7 +141,11 @@ public class Controller {
 
                 if(gameResult.equals(CONTINUE_GAME)==false){
                     ShowDialog(gameResult);
+                    return;
                 }
+
+                field = serverConnection.ReceiveResponseFromServer();
+                DrawField();
             }
             else if(setSignResult.equals("error")==true){
                 ShowDialog("Неверный ход походите ещё");
