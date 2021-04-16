@@ -7,46 +7,33 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.text.Font;
 
-public class Controller {
+import java.io.IOException;
 
-    @FXML
-    Canvas canvasField;
+class ProcessServer extends Thread {
+    private Canvas canvasField;
+    private ServerConnection serverConnection;
 
-    @FXML
-    Button btnConnect;
-
-    private GraphicsContext gc = null;
-    private ServerConnection serverConnection = null;
-    private String sign = null;
+    private GraphicsContext gc;
     private String field = null;
 
     private double dy, dx, w, h;
     private final char CRISS = 'O';
     private final char CROSS = 'X';
 
-    private final String WIN_CROSS = "WinCross";
-    private final String WIN_CRISS = "WinCriss";
-    private final String DRAW = "Draw";
-    private final String CONTINUE_GAME = "Continue";
+    public ProcessServer(ServerConnection serverConnection, Canvas canvasField) {
+        this.canvasField = canvasField;
+        this.serverConnection = serverConnection;
 
-    @FXML
-    public void initialize() {
         gc = canvasField.getGraphicsContext2D();
 
         dy = canvasField.getHeight() / 3.0;
         dx = canvasField.getWidth() / 3.0;
         w = canvasField.getWidth();
         h = canvasField.getHeight();
-
-        DrawGrid();
-    }
-
-
-    private void ShowDialog(String message) {
-        new Alert(Alert.AlertType.CONFIRMATION, message).showAndWait();
     }
 
     private void DrawGrid() {
@@ -99,6 +86,53 @@ public class Controller {
         }
     }
 
+    public void run() {
+        while (true) {
+            try {
+                serverConnection.SendRequestToServer("getfield|9|9");
+                field = serverConnection.ReceiveResponseFromServer();
+
+                DrawGrid();
+                DrawField();
+
+                Thread.sleep(200);
+
+            } catch (InterruptedException | IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+public class Controller {
+
+    @FXML
+    Canvas canvasField;
+
+    @FXML
+    Button btnConnect;
+
+    @FXML
+    Label labelSign;
+
+    private ServerConnection serverConnection = null;
+    private String sign = null;
+
+    private final String WIN_CROSS = "WinCross";
+    private final String WIN_CRISS = "WinCriss";
+    private final String DRAW = "Draw";
+    private final String CONTINUE_GAME = "Continue";
+
+    @FXML
+    public void initialize() {
+
+    }
+
+    private void ShowDialog(String message) {
+        new Alert(Alert.AlertType.CONFIRMATION, message).showAndWait();
+    }
+
+
     public void btnConnectClick(ActionEvent actionEvent) {
         try {
             serverConnection = new ServerConnection();
@@ -112,11 +146,12 @@ public class Controller {
                 ShowDialog("Вы играете за O");
             }
 
-            field = serverConnection.ReceiveResponseFromServer();
-
-            DrawField();
+            labelSign.setText(labelSign.getText()+sign);
 
             btnConnect.setDisable(true);
+
+            ProcessServer processServer = new ProcessServer(serverConnection, canvasField);
+            processServer.start();
 
         } catch (Exception e) {
             ShowDialog(e.getMessage());
@@ -126,28 +161,14 @@ public class Controller {
     public void canvasFieldClicked(MouseEvent mouseEvent) {
 
         try {
-            int j = (int) ((mouseEvent.getSceneX() - canvasField.getLayoutX()) / dx);
-            int i = (int) ((mouseEvent.getSceneY() - canvasField.getLayoutY()) / dy);
+            int j = (int) ((mouseEvent.getSceneX() - canvasField.getLayoutX()) / (canvasField.getWidth() / 3.0));
+            int i = (int) ((mouseEvent.getSceneY() - canvasField.getLayoutY()) / (canvasField.getHeight() / 3.0));
 
-            serverConnection.SendRequestToServer(i + "|" + j);
+            serverConnection.SendRequestToServer("setsign|" + i + "|" + j);
 
             String setSignResult = serverConnection.ReceiveResponseFromServer();
 
-            if(setSignResult.equals("ok")==true){
-                field = serverConnection.ReceiveResponseFromServer();
-                DrawField();
-
-                String gameResult = serverConnection.ReceiveResponseFromServer();
-
-                if(gameResult.equals(CONTINUE_GAME)==false){
-                    ShowDialog(gameResult);
-                    return;
-                }
-
-                field = serverConnection.ReceiveResponseFromServer();
-                DrawField();
-            }
-            else if(setSignResult.equals("error")==true){
+            if (setSignResult.equals("error") == true) {
                 ShowDialog("Неверный ход походите ещё");
             }
         } catch (Exception e) {

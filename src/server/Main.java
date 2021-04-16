@@ -7,6 +7,68 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+class ProcessPlayer extends Thread {
+    static void Log(String msg) {
+        System.out.println(msg);
+    }
+
+    private DataInputStream inPlayer;
+    private DataOutputStream outPlayer;
+    private Controller controller;
+    private String playerName;
+    private char sign;
+
+    public ProcessPlayer(DataInputStream inPlayer, DataOutputStream outPlayer, Controller controller, String playerName, char sign) {
+        this.inPlayer = inPlayer;
+        this.outPlayer = outPlayer;
+        this.controller = controller;
+        this.playerName = playerName;
+        this.sign = sign;
+    }
+
+    public void run() {
+        while (true) {
+            try {
+                String request = inPlayer.readUTF();
+                String response;
+
+
+                String[] params = request.split("\\|");
+
+                String command = params[0];
+                int i = Integer.parseInt(params[1]);
+                int j = Integer.parseInt(params[2]);
+
+                switch (command) {
+                    case "getfield":
+                        //Log("from " + playerName + ": " + request);
+                        response = controller.GetFieldInString();
+
+                        outPlayer.writeUTF(response);
+
+                        //Log("to " + playerName + ":\n" + response);
+                        break;
+
+                    case "setsign":
+                        Log("from " + playerName + ": " + request);
+                        boolean setSignResult = controller.SetSign(i, j, sign);
+
+                        response = setSignResult == true ? "ok" : "error";
+
+                        outPlayer.writeUTF(response);
+
+                        Log("to " + playerName + ":" + response);
+                        break;
+                }
+
+
+            } catch (IOException e) {
+                Log("some error: " + e.getMessage());
+            }
+        }
+    }
+}
+
 public class Main {
     static void Log(String msg) {
         System.out.println(msg);
@@ -52,6 +114,9 @@ public class Main {
             Log("player1 error: " + e.getMessage());
             return;
         }
+        ProcessPlayer processPlayer1 = new ProcessPlayer(inPlayer1, outPlayer1, controller, "player1", controller.CROSS);
+        processPlayer1.start();
+
 
         try {
             talkingPlayer2 = listener.accept();
@@ -67,86 +132,8 @@ public class Main {
             return;
         }
 
-        outPlayer1.writeUTF(controller.GetFieldInString());
-        outPlayer2.writeUTF(controller.GetFieldInString());
+        ProcessPlayer processPlayer2 = new ProcessPlayer(inPlayer2, outPlayer2, controller, "player2", controller.CRISS);
+        processPlayer2.start();
 
-        int i, j;
-        boolean setSignResult;
-
-        while (true) {
-            try {
-
-                do {
-                    String requestPlayer1 = inPlayer1.readUTF();
-                    Log("from player1: " + requestPlayer1);
-
-                    //1|2->[1,2]->1 2
-                    String[] params = requestPlayer1.split("|");
-                    i = Integer.parseInt(params[0]);
-                    j = Integer.parseInt(params[2]);
-
-                    setSignResult = controller.SetSign(i, j, controller.CROSS);
-
-                    String responsePlayer1 = setSignResult == true ? "ok" : "error";
-
-                    outPlayer1.writeUTF(responsePlayer1);
-                    Log("to player1: " + responsePlayer1);
-
-                } while (setSignResult == false);
-
-                outPlayer1.writeUTF(controller.GetFieldInString());
-                outPlayer2.writeUTF(controller.GetFieldInString());
-
-                outPlayer1.writeUTF(controller.GetGameResult());
-                outPlayer2.writeUTF(controller.GetGameResult());
-
-                if (controller.GetGameResult().equals(controller.CONTINUE_GAME) == false) {
-                    Log("game result: " + controller.GetGameResult());
-                    break;
-                }
-
-                do {
-                    String requestPlayer2 = inPlayer2.readUTF();
-                    Log("from player2: " + requestPlayer2);
-
-                    //1|2->[1,2]->1 2
-                    String[] params = requestPlayer2.split("|");
-                    i = Integer.parseInt(params[0]);
-                    j = Integer.parseInt(params[2]);
-
-                    setSignResult = controller.SetSign(i, j, controller.CRISS);
-
-                    String responsePlayer2 = setSignResult == true ? "ok" : "error";
-
-                    outPlayer2.writeUTF(responsePlayer2);
-                    Log("to player2: " + responsePlayer2);
-
-                } while (setSignResult == false);
-
-                outPlayer1.writeUTF(controller.GetFieldInString());
-                outPlayer2.writeUTF(controller.GetFieldInString());
-
-                outPlayer1.writeUTF(controller.GetGameResult());
-                outPlayer2.writeUTF(controller.GetGameResult());
-
-                if (controller.GetGameResult().equals(controller.CONTINUE_GAME) == false) {
-                    Log("game result: " + controller.GetGameResult());
-                    break;
-                }
-
-            } catch (Exception e) {
-                Log("some error: " + e.getMessage());
-            }
-        }
-
-        try {
-            talkingPlayer1.close();
-            talkingPlayer2.close();
-
-            listener.close();
-        }
-        catch (Exception e) {
-            Log("some error: " + e.getMessage());
-        }
     }
 }
