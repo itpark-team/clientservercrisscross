@@ -13,9 +13,16 @@ public class Controller {
     public final String DRAW = "Draw";
     public final String CONTINUE_GAME = "Continue";
 
+    private int currentStep;
+
     public Controller() {
         fieldSize = 3;
         field = new char[fieldSize][fieldSize];
+        currentStep = 1;
+    }
+
+    public int GetCurrentStep(){
+        return currentStep;
     }
 
     public void ClearField() {
@@ -51,6 +58,7 @@ public class Controller {
         }
 
         field[i][j] = sign;
+        currentStep++;
         return true;
     }
 

@@ -18,6 +18,7 @@ class ProcessPlayer extends Thread {
     private String playerName;
     private char sign;
 
+
     public ProcessPlayer(DataInputStream inPlayer, DataOutputStream outPlayer, Controller controller, String playerName, char sign) {
         this.inPlayer = inPlayer;
         this.outPlayer = outPlayer;
@@ -41,19 +42,41 @@ class ProcessPlayer extends Thread {
 
                 switch (command) {
                     case "getfield":
-                        //Log("from " + playerName + ": " + request);
+                        Log("from " + playerName + ": " + request);
+
                         response = controller.GetFieldInString();
 
                         outPlayer.writeUTF(response);
 
-                        //Log("to " + playerName + ":\n" + response);
+                        Log("to " + playerName + ":\n" + response);
                         break;
 
                     case "setsign":
                         Log("from " + playerName + ": " + request);
+
                         boolean setSignResult = controller.SetSign(i, j, sign);
 
                         response = setSignResult == true ? "ok" : "error";
+
+                        outPlayer.writeUTF(response);
+
+                        Log("to " + playerName + ":" + response);
+                        break;
+
+                    case "currentstep":
+                        Log("from " + playerName + ": " + request);
+
+                        response = Integer.toString(controller.GetCurrentStep());
+
+                        outPlayer.writeUTF(response);
+
+                        Log("to " + playerName + ":" + response);
+                        break;
+
+                    case "gameresult":
+                        Log("from " + playerName + ": " + request);
+
+                        response = controller.GetGameResult();
 
                         outPlayer.writeUTF(response);
 
@@ -64,6 +87,7 @@ class ProcessPlayer extends Thread {
 
             } catch (IOException e) {
                 Log("some error: " + e.getMessage());
+                break;
             }
         }
     }

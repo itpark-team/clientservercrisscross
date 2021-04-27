@@ -24,7 +24,19 @@ class ProcessServer extends Thread {
     private final char CRISS = 'O';
     private final char CROSS = 'X';
 
-    public ProcessServer(ServerConnection serverConnection, Canvas canvasField) {
+    private String sign = null;
+
+    private final String WIN_CROSS = "WinCross";
+    private final String WIN_CRISS = "WinCriss";
+    private final String DRAW = "Draw";
+    private final String CONTINUE_GAME = "Continue";
+
+    private void ShowDialog(String message) {
+        System.out.println(message);
+        //new Alert(Alert.AlertType.CONFIRMATION, message).showAndWait();
+    }
+
+    public ProcessServer(ServerConnection serverConnection, Canvas canvasField, String sign) {
         this.canvasField = canvasField;
         this.serverConnection = serverConnection;
 
@@ -34,6 +46,8 @@ class ProcessServer extends Thread {
         dx = canvasField.getWidth() / 3.0;
         w = canvasField.getWidth();
         h = canvasField.getHeight();
+
+        this.sign = sign;
     }
 
     private void DrawGrid() {
@@ -95,10 +109,44 @@ class ProcessServer extends Thread {
                 DrawGrid();
                 DrawField();
 
-                Thread.sleep(200);
+                serverConnection.SendRequestToServer("currentstep|9|9");
+                int currentStep = Integer.parseInt(serverConnection.ReceiveResponseFromServer());
+
+                if(sign.equals("X")==true && currentStep%2==1){
+                    canvasField.setDisable(false);
+                }
+
+                if(sign.equals("O")==true && currentStep%2==0){
+                    canvasField.setDisable(false);
+                }
+
+                serverConnection.SendRequestToServer("gameresult|9|9");
+                String gameResult = serverConnection.ReceiveResponseFromServer();
+
+                if(gameResult.equals(CONTINUE_GAME)==false){
+                    canvasField.setDisable(true);
+
+                    switch (gameResult)
+                    {
+                        case WIN_CRISS:
+                            ShowDialog("Победил O");
+                            break;
+                        case WIN_CROSS:
+                            ShowDialog("Победил X");
+                            break;
+                        case DRAW:
+                            ShowDialog("Ничья");
+                            break;
+                    }
+
+                    break;
+                }
+
+                Thread.sleep(500);
 
             } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
+                break;
             }
         }
     }
@@ -118,10 +166,7 @@ public class Controller {
     private ServerConnection serverConnection = null;
     private String sign = null;
 
-    private final String WIN_CROSS = "WinCross";
-    private final String WIN_CRISS = "WinCriss";
-    private final String DRAW = "Draw";
-    private final String CONTINUE_GAME = "Continue";
+
 
     @FXML
     public void initialize() {
@@ -144,13 +189,14 @@ public class Controller {
 
             if (sign.equals("O") == true) {
                 ShowDialog("Вы играете за O");
+                canvasField.setDisable(true);
             }
 
             labelSign.setText(labelSign.getText()+sign);
 
             btnConnect.setDisable(true);
 
-            ProcessServer processServer = new ProcessServer(serverConnection, canvasField);
+            ProcessServer processServer = new ProcessServer(serverConnection, canvasField, sign);
             processServer.start();
 
         } catch (Exception e) {
@@ -170,6 +216,8 @@ public class Controller {
 
             if (setSignResult.equals("error") == true) {
                 ShowDialog("Неверный ход походите ещё");
+            }else{
+                canvasField.setDisable(true);
             }
         } catch (Exception e) {
             ShowDialog(e.getMessage());
