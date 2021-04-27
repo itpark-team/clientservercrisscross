@@ -1,5 +1,6 @@
 package client;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 
@@ -32,8 +33,11 @@ class ProcessServer extends Thread {
     private final String CONTINUE_GAME = "Continue";
 
     private void ShowDialog(String message) {
-        System.out.println(message);
-        //new Alert(Alert.AlertType.CONFIRMATION, message).showAndWait();
+        Platform.runLater(new Runnable() {
+            @Override public void run() {
+                new Alert(Alert.AlertType.CONFIRMATION, message).showAndWait();
+            }
+        });
     }
 
     public ProcessServer(ServerConnection serverConnection, Canvas canvasField, String sign) {
