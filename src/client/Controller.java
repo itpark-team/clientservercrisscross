@@ -32,15 +32,19 @@ class ProcessServer extends Thread {
     private final String DRAW = "Draw";
     private final String CONTINUE_GAME = "Continue";
 
+    private Button btnConnect;
+
     private void ShowDialog(String message) {
         Platform.runLater(new Runnable() {
             @Override public void run() {
                 new Alert(Alert.AlertType.CONFIRMATION, message).showAndWait();
+
+
             }
         });
     }
 
-    public ProcessServer(ServerConnection serverConnection, Canvas canvasField, String sign) {
+    public ProcessServer(ServerConnection serverConnection, Canvas canvasField, String sign, Button btnConnect) {
         this.canvasField = canvasField;
         this.serverConnection = serverConnection;
 
@@ -52,6 +56,8 @@ class ProcessServer extends Thread {
         h = canvasField.getHeight();
 
         this.sign = sign;
+
+        this.btnConnect = btnConnect;
     }
 
     private void DrawGrid() {
@@ -105,7 +111,8 @@ class ProcessServer extends Thread {
     }
 
     public void run() {
-        while (true) {
+        boolean doing = true;
+        while (doing == true) {
             try {
                 serverConnection.SendRequestToServer("getfield|9|9");
                 field = serverConnection.ReceiveResponseFromServer();
@@ -143,14 +150,17 @@ class ProcessServer extends Thread {
                             break;
                     }
 
-                    break;
+                    doing=false;
+                    btnConnect.setDisable(false);
+                    canvasField.setDisable(true);
+
                 }
 
                 Thread.sleep(500);
 
             } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
-                break;
+                doing=false;
             }
         }
     }
@@ -174,7 +184,7 @@ public class Controller {
 
     @FXML
     public void initialize() {
-
+        canvasField.setDisable(true);
     }
 
     private void ShowDialog(String message) {
@@ -189,18 +199,21 @@ public class Controller {
 
             if (sign.equals("X") == true) {
                 ShowDialog("Вы играете за X - ожидаем подключение другого игрока");
+                canvasField.setDisable(false);
             }
 
             if (sign.equals("O") == true) {
                 ShowDialog("Вы играете за O");
-                canvasField.setDisable(true);
             }
 
-            labelSign.setText(labelSign.getText()+sign);
+            GraphicsContext gc = canvasField.getGraphicsContext2D();
+            gc.clearRect(0,0,canvasField.getWidth(),canvasField.getHeight());
+
+            labelSign.setText("Вы играете за: "+sign);
 
             btnConnect.setDisable(true);
 
-            ProcessServer processServer = new ProcessServer(serverConnection, canvasField, sign);
+            ProcessServer processServer = new ProcessServer(serverConnection, canvasField, sign, btnConnect);
             processServer.start();
 
         } catch (Exception e) {

@@ -28,7 +28,8 @@ class ProcessPlayer extends Thread {
     }
 
     public void run() {
-        while (true) {
+        boolean doing = true;
+        while (doing == true) {
             try {
                 String request = inPlayer.readUTF();
                 String response;
@@ -81,13 +82,18 @@ class ProcessPlayer extends Thread {
                         outPlayer.writeUTF(response);
 
                         Log("to " + playerName + ":" + response);
+
+                        if (response.equals("Continue") == false) {
+                            doing = false;
+                        }
+
                         break;
                 }
 
 
             } catch (IOException e) {
                 Log("some error: " + e.getMessage());
-                break;
+                doing = false;
             }
         }
     }
@@ -98,66 +104,75 @@ public class Main {
         System.out.println(msg);
     }
 
-    public static void main(String[] args) throws IOException {
-        System.in.read();
+    public static void main(String[] args) throws IOException, InterruptedException {
 
-        Controller controller = new Controller();
-        controller.ClearField();
+        //System.in.read();
 
-        ServerSocket listener = null;
+        while (true) {
 
-        try {
-            listener = new ServerSocket(37152, 1, InetAddress.getByName("127.0.0.1"));
-            Log("server is started");
-        } catch (Exception e) {
-            Log("failed to start server: " + e.getMessage());
-            return;
+            Controller controller = new Controller();
+            controller.ClearField();
+
+            ServerSocket listener = null;
+
+            try {
+                listener = new ServerSocket(37152, 1, InetAddress.getByName("127.0.0.1"));
+                Log("server is started");
+            } catch (Exception e) {
+                Log("failed to start server: " + e.getMessage());
+                return;
+            }
+
+            Log("server is listening");
+
+            Socket talkingPlayer1 = null;
+            Socket talkingPlayer2 = null;
+
+            DataInputStream inPlayer1 = null;
+            DataOutputStream outPlayer1 = null;
+
+            DataInputStream inPlayer2 = null;
+            DataOutputStream outPlayer2 = null;
+
+            try {
+                talkingPlayer1 = listener.accept();
+                Log("player1 is connected");
+
+                inPlayer1 = new DataInputStream(talkingPlayer1.getInputStream());
+                outPlayer1 = new DataOutputStream(talkingPlayer1.getOutputStream());
+
+                outPlayer1.writeUTF(Character.toString(controller.CROSS));
+
+            } catch (Exception e) {
+                Log("player1 error: " + e.getMessage());
+                return;
+            }
+            ProcessPlayer processPlayer1 = new ProcessPlayer(inPlayer1, outPlayer1, controller, "player1", controller.CROSS);
+            processPlayer1.start();
+
+
+            try {
+                talkingPlayer2 = listener.accept();
+                Log("player2 is connected");
+
+                inPlayer2 = new DataInputStream(talkingPlayer2.getInputStream());
+                outPlayer2 = new DataOutputStream(talkingPlayer2.getOutputStream());
+
+                outPlayer2.writeUTF(Character.toString(controller.CRISS));
+
+            } catch (Exception e) {
+                Log("player2 error: " + e.getMessage());
+                return;
+            }
+
+            ProcessPlayer processPlayer2 = new ProcessPlayer(inPlayer2, outPlayer2, controller, "player2", controller.CRISS);
+            processPlayer2.start();
+
+
+            processPlayer1.join();
+            processPlayer2.join();
+
+            listener.close();
         }
-
-        Log("server is listening");
-
-        Socket talkingPlayer1 = null;
-        Socket talkingPlayer2 = null;
-
-        DataInputStream inPlayer1 = null;
-        DataOutputStream outPlayer1 = null;
-
-        DataInputStream inPlayer2 = null;
-        DataOutputStream outPlayer2 = null;
-
-        try {
-            talkingPlayer1 = listener.accept();
-            Log("player1 is connected");
-
-            inPlayer1 = new DataInputStream(talkingPlayer1.getInputStream());
-            outPlayer1 = new DataOutputStream(talkingPlayer1.getOutputStream());
-
-            outPlayer1.writeUTF(Character.toString(controller.CROSS));
-
-        } catch (Exception e) {
-            Log("player1 error: " + e.getMessage());
-            return;
-        }
-        ProcessPlayer processPlayer1 = new ProcessPlayer(inPlayer1, outPlayer1, controller, "player1", controller.CROSS);
-        processPlayer1.start();
-
-
-        try {
-            talkingPlayer2 = listener.accept();
-            Log("player2 is connected");
-
-            inPlayer2 = new DataInputStream(talkingPlayer2.getInputStream());
-            outPlayer2 = new DataOutputStream(talkingPlayer2.getOutputStream());
-
-            outPlayer2.writeUTF(Character.toString(controller.CRISS));
-
-        } catch (Exception e) {
-            Log("player2 error: " + e.getMessage());
-            return;
-        }
-
-        ProcessPlayer processPlayer2 = new ProcessPlayer(inPlayer2, outPlayer2, controller, "player2", controller.CRISS);
-        processPlayer2.start();
-
     }
 }
